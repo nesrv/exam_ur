@@ -141,12 +141,39 @@
     }
     a.btn:hover { filter: brightness(1.06); }
     a.link { color: var(--oz-blue); font-weight: 600; font-size: 14px; }
+    .navtabs {
+      display: flex;
+      gap: 0.35rem;
+      margin: 0 0 1rem;
+      flex-wrap: wrap;
+    }
+    .navtabs a {
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      color: var(--oz-text);
+      padding: 0.4rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid var(--oz-line);
+      background: #fff;
+    }
+    .navtabs a:hover { border-color: var(--oz-blue); color: var(--oz-blue); }
+    .navtabs a[aria-current="page"] {
+      background: var(--oz-blue-soft);
+      border-color: rgba(0, 91, 255, 0.35);
+      color: var(--oz-blue);
+    }
   </style>
 </head>
 <body>
   <div class="ribbon">Результат готов · часть 4 — отдельная оценка</div>
   <div class="shell">
-    <a class="brand" href="{% url 'quiz_test' %}">
+    <nav class="navtabs" aria-label="Разделы">
+      <a href="{% url 'quiz_landing' %}">Начало</a>
+      <a href="{% url 'quiz_test' %}">Вопросы</a>
+      <a href="{% url 'quiz_stats' %}">Статистика</a>
+    </nav>
+    <a class="brand" href="{% url 'quiz_landing' %}">
       <span class="brand-mark">УР</span>
       <span class="brand-text">
         <strong>Кабинет зачёта</strong>
@@ -158,7 +185,7 @@
       <div class="card">
         <h1>Не получилось</h1>
         <p class="err">{{ error }}</p>
-        <a class="btn" href="{% url 'quiz_test' %}">К форме теста</a>
+        <a class="btn" href="{% url 'quiz_landing' %}">На главную</a>
       </div>
     {% else %}
       <div class="card">
@@ -181,8 +208,36 @@
 
         <p class="note">Ответы на кейсы (вопросы 16–20) уже сохранены. Итоговый балл за зачёт уточнит преподаватель в админке.</p>
 
-        <a class="btn" href="{% url 'quiz_test' %}">Пройти ещё раз</a>
+        <a class="btn" href="{% url 'quiz_landing' %}">Пройти ещё раз</a>
       </div>
+    <script>
+    (function () {
+      var vid = "{{ submission.variant|escapejs }}";
+      var pingUrl = "{% url 'quiz_presence_ping' %}";
+      function clientId() {
+        var k = "ur_stats_cid";
+        try {
+          var x = localStorage.getItem(k);
+          if (!x) {
+            x = (typeof crypto !== "undefined" && crypto.randomUUID)
+              ? crypto.randomUUID()
+              : String(Date.now()) + "-" + Math.random().toString(16).slice(2);
+            localStorage.setItem(k, x);
+          }
+          return x;
+        } catch (e) {
+          return "anon-" + String(Date.now());
+        }
+      }
+      function ping() {
+        var u = pingUrl + "?cid=" + encodeURIComponent(clientId())
+          + "&v=" + encodeURIComponent(vid) + "&p=result";
+        fetch(u, { credentials: "same-origin" }).catch(function () {});
+      }
+      ping();
+      setInterval(ping, 8000);
+    })();
+    </script>
     {% endif %}
   </div>
 </body>

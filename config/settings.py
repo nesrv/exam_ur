@@ -1,14 +1,63 @@
+import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "dev-only-change-in-production"
 
-DEBUG = True
+def _env_bool(name: str, default: bool = False) -> bool:
+    v = os.environ.get(name, "")
+    if v == "":
+        return default
+    return v.strip().lower() in ("1", "true", "yes", "on")
 
-ALLOWED_HOSTS: list[str] = ["127.0.0.1", "localhost"]
-if DEBUG:
+
+# Продакшен (VPS): задайте переменные окружения перед запуском Gunicorn, например в unit-файле:
+#   Environment="DJANGO_SECRET_KEY=..."
+#   Environment="DJANGO_DEBUG=false"
+#   Environment="DJANGO_ALLOWED_HOSTS=example.ru,www.example.ru"
+#   Environment="DJANGO_CSRF_TRUSTED_ORIGINS=https://example.ru,https://www.example.ru"
+# Локально ничего не задаётся — работают значения по умолчанию ниже.
+
+SECRET_KEY = os.environ.get(
+    "DJANGO_SECRET_KEY",
+    "dev-only-change-in-production",
+)
+
+DEBUG = _env_bool("DJANGO_DEBUG", True)
+
+_allowed_raw = os.environ.get("DJANGO_ALLOWED_HOSTS", "").strip()
+if _allowed_raw:
+    ALLOWED_HOSTS: list[str] = [
+        h.strip() for h in _allowed_raw.split(",") if h.strip()
+    ]
+else:
+    ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+
+if DEBUG and "testserver" not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append("testserver")
+
+_csrf_origins_raw = os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").strip()
+CSRF_TRUSTED_ORIGINS: list[str] = [
+    o.strip() for o in _csrf_origins_raw.split(",") if o.strip()
+]
+
+if not DEBUG:
+    # За Nginx с TLS: клиентский HTTPS виден Django по заголовку от прокси.
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    USE_X_FORWARDED_HOST = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = _env_bool("DJANGO_SECURE_SSL_REDIRECT", True)
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = "DENY"
+
+    _hsts = os.environ.get("DJANGO_HSTS_SECONDS", "").strip()
+    if _hsts.isdigit() and int(_hsts) > 0:
+        SECURE_HSTS_SECONDS = int(_hsts)
+        SECURE_HSTS_INCLUDE_SUBDOMAINS = _env_bool(
+            "DJANGO_HSTS_INCLUDE_SUBDOMAINS", False
+        )
+        SECURE_HSTS_PRELOAD = _env_bool("DJANGO_HSTS_PRELOAD", False)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -53,6 +102,11 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
+        # SQLite по умолчанию почти не ждёт блокировку — при параллельных ping/stats
+        # получаем «database is locked». timeout — сколько секунд ждать lock (sqlite3).
+        "OPTIONS": {
+            "timeout": 30,
+        },
     }
 }
 

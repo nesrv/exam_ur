@@ -315,29 +315,86 @@
       color: var(--oz-muted);
       margin-top: 0.5rem;
     }
+    .flash {
+      background: #fff8e6;
+      border: 1px solid #f0c040;
+      color: #6a5200;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-sm);
+      margin-bottom: 1rem;
+      font-size: 14px;
+    }
+    .navtabs {
+      display: flex;
+      gap: 0.35rem;
+      margin: 0 0 1rem;
+      flex-wrap: wrap;
+    }
+    .navtabs a {
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      color: var(--oz-text);
+      padding: 0.4rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid var(--oz-line);
+      background: #fff;
+    }
+    .navtabs a:hover { border-color: var(--oz-blue); color: var(--oz-blue); }
+    .navtabs a[aria-current="page"] {
+      background: var(--oz-blue-soft);
+      border-color: rgba(0, 91, 255, 0.35);
+      color: var(--oz-blue);
+    }
+    #ur-copy-flash {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      pointer-events: none;
+      background: rgba(224, 31, 25, 0.28);
+    }
+    #ur-copy-flash.ur-copy-flash--on {
+      display: block;
+      animation: ur-copy-pulse 0.22s ease-in-out 14 alternate;
+    }
+    @keyframes ur-copy-pulse {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
   </style>
 </head>
 <body>
+  <div id="ur-copy-flash" aria-hidden="true"></div>
   <div class="ribbon">Доставка знаний в срок · <span>части 1–3 — автопроверка</span> · часть 4 — преподаватель</div>
 
   <div class="shell">
     <div class="topbar">
-      <a class="brand" href="{% url 'quiz_test' %}">
+      <a class="brand" href="{% url 'quiz_landing' %}">
         <span class="brand-mark">УР</span>
         <span class="brand-text">
           <strong>Кабинет зачёта</strong>
           <small>Управление разработкой</small>
         </span>
       </a>
-      <span class="pill">20 вопросов · ~25 мин</span>
+      <span class="pill">{{ variant_label }} · 20 вопросов</span>
     </div>
+    <nav class="navtabs" aria-label="Разделы">
+      <a href="{% url 'quiz_landing' %}">Начало</a>
+      <a href="{% url 'quiz_test' %}" aria-current="page">Вопросы</a>
+      <a href="{% url 'quiz_stats' %}">Статистика</a>
+    </nav>
 
-    <form method="post" action="">
+    {% if flash %}
+    <div class="flash" role="alert">{{ flash }}</div>
+    {% endif %}
+
+    <form id="quiz-form" method="post" action="">
       {% csrf_token %}
 
       <header class="hero">
         <h1>Электронное тестирование</h1>
-        <p class="hero-lead">Зачёт по дисциплине «Управление разработкой». Ответьте на все блоки и нажмите «Отправить» — баллы за части 1–3 появятся сразу.</p>
+        <p class="hero-lead">Зачёт по дисциплине «Управление разработкой». Вариант уже выбран. Ответьте на все блоки и нажмите «Отправить» — баллы за части 1–3 появятся сразу.</p>
         <div class="steps" aria-hidden="true">
           <span>1 · Одиночный выбор</span>
           <span>2 · Множественный выбор</span>
@@ -346,8 +403,8 @@
         </div>
         <hr style="margin:1.25rem 0 1rem;border:none;border-top:1px solid var(--oz-line)">
         <div class="field-meta">
-          <label for="id_student">ФИО / группа</label>
-          <input id="id_student" type="text" name="student_name" maxlength="200" autocomplete="name">
+          <label for="id_student">ФИО / группа (в сдачу)</label>
+          <input id="id_student" type="text" name="student_name" maxlength="200" autocomplete="name" value="{{ prefilled_student_name }}">
         </div>
       </header>
 
@@ -357,42 +414,14 @@
           <span class="badge-part">5</span>
         </div>
         <p class="hint"><em>Выберите один правильный вариант ответа.</em></p>
-
+        {% for q in part1 %}
         <div class="q">
-          <p>1. Как называется методология, где требования оцениваются итеративно, а команда работает спринтами?</p>
-          <label><input type="radio" name="q1" value="A" required> A) Waterfall</label>
-          <label><input type="radio" name="q1" value="B"> B) V-Model</label>
-          <label><input type="radio" name="q1" value="C"> C) Scrum</label>
-          <label><input type="radio" name="q1" value="D"> D) Kanban</label>
+          <p>{{ q.n }}. {{ q.stem }}</p>
+          {% for choice in q.choices %}
+          <label><input type="radio" name="q{{ q.n }}" value="{{ choice.0 }}" {% if forloop.first %}required{% endif %}> {{ choice.0 }}) {{ choice.1 }}</label>
+          {% endfor %}
         </div>
-        <div class="q">
-          <p>2. Что из перечисленного относится к вертикальному масштабированию?</p>
-          <label><input type="radio" name="q2" value="A" required> A) Добавление нового сервера в кластер</label>
-          <label><input type="radio" name="q2" value="B"> B) Увеличение оперативной памяти на существующем сервере</label>
-          <label><input type="radio" name="q2" value="C"> C) Разделение базы данных на шарды</label>
-          <label><input type="radio" name="q2" value="D"> D) Запуск дополнительных контейнеров в оркестраторе</label>
-        </div>
-        <div class="q">
-          <p>3. Какой вид тестирования проверяет, что новый код не сломал уже работающую функциональность?</p>
-          <label><input type="radio" name="q3" value="A" required> A) Юнит-тестирование</label>
-          <label><input type="radio" name="q3" value="B"> B) Регрессионное тестирование</label>
-          <label><input type="radio" name="q3" value="C"> C) Нагрузочное тестирование</label>
-          <label><input type="radio" name="q3" value="D"> D) Функциональное тестирование</label>
-        </div>
-        <div class="q">
-          <p>4. Кто в Scrum-команде отвечает за приоритизацию бэклога продукта?</p>
-          <label><input type="radio" name="q4" value="A" required> A) Scrum-мастер</label>
-          <label><input type="radio" name="q4" value="B"> B) Команда разработки</label>
-          <label><input type="radio" name="q4" value="C"> C) Product Owner</label>
-          <label><input type="radio" name="q4" value="D"> D) Менеджер проекта</label>
-        </div>
-        <div class="q">
-          <p>5. Какой инструмент НЕ относится к системам управления проектами (в классическом понимании Kanban/Scrum)?</p>
-          <label><input type="radio" name="q5" value="A" required> A) Jira</label>
-          <label><input type="radio" name="q5" value="B"> B) Trello</label>
-          <label><input type="radio" name="q5" value="C"> C) Git</label>
-          <label><input type="radio" name="q5" value="D"> D) YouTrack</label>
-        </div>
+        {% endfor %}
       </section>
 
       <section class="card" aria-labelledby="p2">
@@ -401,42 +430,14 @@
           <span class="badge-part">5</span>
         </div>
         <p class="hint"><em>Выберите <strong>все</strong> правильные варианты ответов (от 2 до 4).</em></p>
-
+        {% for q in part2 %}
         <div class="q">
-          <p>6. Какие из перечисленных методологий относятся к гибким (Agile)?</p>
-          <label><input type="checkbox" name="q6" value="A"> A) Waterfall</label>
-          <label><input type="checkbox" name="q6" value="B"> B) Scrum</label>
-          <label><input type="checkbox" name="q6" value="C"> C) V-Model</label>
-          <label><input type="checkbox" name="q6" value="D"> D) Kanban</label>
+          <p>{{ q.n }}. {{ q.stem }}</p>
+          {% for choice in q.choices %}
+          <label><input type="checkbox" name="q{{ q.n }}" value="{{ choice.0 }}"> {{ choice.0 }}) {{ choice.1 }}</label>
+          {% endfor %}
         </div>
-        <div class="q">
-          <p>7. Какие характеристики присущи высоконагруженной системе (highload)?</p>
-          <label><input type="checkbox" name="q7" value="A"> A) Способность обрабатывать тысячи запросов в секунду</label>
-          <label><input type="checkbox" name="q7" value="B"> B) Обязательное использование одного мощного сервера</label>
-          <label><input type="checkbox" name="q7" value="C"> C) Горизонтальное масштабирование</label>
-          <label><input type="checkbox" name="q7" value="D"> D) Отказоустойчивость (redundancy)</label>
-        </div>
-        <div class="q">
-          <p>8. Какие виды тестирования относятся к функциональным?</p>
-          <label><input type="checkbox" name="q8" value="A"> A) Тестирование производительности</label>
-          <label><input type="checkbox" name="q8" value="B"> B) Smoke-тестирование (проверка критических путей)</label>
-          <label><input type="checkbox" name="q8" value="C"> C) Тестирование безопасности (пентест)</label>
-          <label><input type="checkbox" name="q8" value="D"> D) Sanity-тестирование (проверка работоспособности после изменений)</label>
-        </div>
-        <div class="q">
-          <p>9. Какие метрики качества ПО вы знаете?</p>
-          <label><input type="checkbox" name="q9" value="A"> A) Покрытие кода тестами (code coverage)</label>
-          <label><input type="checkbox" name="q9" value="B"> B) Количество строк кода в проекте</label>
-          <label><input type="checkbox" name="q9" value="C"> C) Индекс цикломатической сложности</label>
-          <label><input type="checkbox" name="q9" value="D"> D) Среднее время восстановления после сбоя (MTTR)</label>
-        </div>
-        <div class="q">
-          <p>10. Какие задачи решает DevOps?</p>
-          <label><input type="checkbox" name="q10" value="A"> A) Объединение разработки и эксплуатации</label>
-          <label><input type="checkbox" name="q10" value="B"> B) Автоматизация CI/CD (непрерывная интеграция и доставка)</label>
-          <label><input type="checkbox" name="q10" value="C"> C) Ручное тестирование всех релизов</label>
-          <label><input type="checkbox" name="q10" value="D"> D) Инфраструктура как код (IaC)</label>
-        </div>
+        {% endfor %}
       </section>
 
       <section class="card" aria-labelledby="p3">
@@ -445,32 +446,13 @@
           <span class="badge-part">5</span>
         </div>
         <p class="hint"><em>Напишите краткий ответ (одно слово, термин или короткая фраза).</em></p>
-
+        {% for q in part3 %}
         <div class="q">
-          <p>11. Как называется процесс автоматического управления контейнерами (например, с помощью Kubernetes), который включает запуск, остановку и масштабирование?</p>
+          <p>{{ q.n }}. {{ q.stem }}</p>
           <p class="answer-label">Ваш ответ:</p>
-          <input type="text" name="q11" maxlength="500" autocomplete="off">
+          <input type="text" name="q{{ q.n }}" maxlength="500" autocomplete="off">
         </div>
-        <div class="q">
-          <p>12. Как называется методология, которая основана на визуализации задач на доске с ограничением количества задач в столбцах (WIP limit)?</p>
-          <p class="answer-label">Ваш ответ:</p>
-          <input type="text" name="q12" maxlength="500" autocomplete="off">
-        </div>
-        <div class="q">
-          <p>13. Как называется подход, при котором код и конфигурация инфраструктуры хранятся в одной системе контроля версий, а изменения разворачиваются автоматически (часто вместе с Kubernetes)?</p>
-          <p class="answer-label">Ваш ответ:</p>
-          <input type="text" name="q13" maxlength="500" autocomplete="off">
-        </div>
-        <div class="q">
-          <p>14. Как называется тестирование самого маленького изолированного фрагмента кода (обычно функции или метода)?</p>
-          <p class="answer-label">Ваш ответ:</p>
-          <input type="text" name="q14" maxlength="500" autocomplete="off">
-        </div>
-        <div class="q">
-          <p>15. Какая модель разработки предполагает строгую последовательность фаз: требования → дизайн → реализация → верификация → эксплуатация, без возврата на предыдущие этапы?</p>
-          <p class="answer-label">Ваш ответ:</p>
-          <input type="text" name="q15" maxlength="500" autocomplete="off">
-        </div>
+        {% endfor %}
       </section>
 
       <section class="card" aria-labelledby="p4">
@@ -479,32 +461,13 @@
           <span class="badge-part" style="background:linear-gradient(135deg,#ff6c00,#e85d00)">5</span>
         </div>
         <p class="hint"><em>Опишите решение или подход (2–5 предложений). Оценивается понимание, а не единственно верный ответ.</em></p>
-
+        {% for q in part4 %}
         <div class="q">
-          <p><strong>16. Кейс (риски).</strong> Ваша команда разрабатывает платёжный сервис. За день до релиза вы находите критический баг в модуле списания денег. По Waterfall релиз отложили бы на месяц. Как вы поступите в Agile-команде, чтобы минимизировать ущерб?</p>
+          <p>{{ q.stem }}</p>
           <p class="answer-label">Ваш ответ:</p>
-          <textarea name="q16"></textarea>
+          <textarea name="q{{ q.n }}"></textarea>
         </div>
-        <div class="q">
-          <p><strong>17. Кейс (масштабирование).</strong> В пик нагрузки ваш сервис начинает тормозить. Выясняется, что процессор на единственном сервере загружен на 100%. Опишите два шага: один для быстрого временного решения и второй — для долгосрочного архитектурного.</p>
-          <p class="answer-label">Ваш ответ:</p>
-          <textarea name="q17"></textarea>
-        </div>
-        <div class="q">
-          <p><strong>18. Кейс (тестирование).</strong> Разработчик исправил мелкий баг в кнопке «Вход» и говорит: «Всё ок, тесты не нужны». Какие три аргумента вы приведёте, чтобы убедить его запустить хотя бы минимальный набор тестов?</p>
-          <p class="answer-label">Ваш ответ:</p>
-          <textarea name="q18"></textarea>
-        </div>
-        <div class="q">
-          <p><strong>19. Кейс (управление рисками).</strong> Вы PM проекта. Ключевой разработчик предупредил, что уходит через 2 недели. Какие три действия вы предпримете немедленно?</p>
-          <p class="answer-label">Ваш ответ:</p>
-          <textarea name="q19"></textarea>
-        </div>
-        <div class="q">
-          <p><strong>20. Кейс (архитектура).</strong> Вам нужно спроектировать систему для онлайн-голосования, которая выдержит 1 млн участников в час. Назовите два ключевых архитектурных решения (например, про БД или балансировку) и объясните, почему именно они.</p>
-          <p class="answer-label">Ваш ответ:</p>
-          <textarea name="q20"></textarea>
-        </div>
+        {% endfor %}
       </section>
 
       <div class="submit-wrap">
@@ -515,5 +478,112 @@
       </div>
     </form>
   </div>
+  <script>
+  (function () {
+    var vid = "{{ heartbeat_variant|escapejs }}";
+    var pingUrl = "{% url 'quiz_presence_ping' %}";
+    function clientId() {
+      var k = "ur_stats_cid";
+      try {
+        var x = localStorage.getItem(k);
+        if (!x) {
+          x = (typeof crypto !== "undefined" && crypto.randomUUID)
+            ? crypto.randomUUID()
+            : String(Date.now()) + "-" + Math.random().toString(16).slice(2);
+          localStorage.setItem(k, x);
+        }
+        return x;
+      } catch (e) {
+        return "anon-" + String(Date.now());
+      }
+    }
+    function ping() {
+      var u = pingUrl + "?cid=" + encodeURIComponent(clientId())
+        + "&v=" + encodeURIComponent(vid) + "&p=test";
+      fetch(u, { credentials: "same-origin" }).catch(function () {});
+    }
+    ping();
+    setInterval(ping, 8000);
+  })();
+  </script>
+  <script>
+  (function () {
+    var form = document.getElementById("quiz-form");
+    if (!form) return;
+    var saveUrl = "{% url 'quiz_save_progress' %}";
+    var timer = null;
+    var copyDetected = false;
+    function csrfToken() {
+      var t = form.querySelector("[name=csrfmiddlewaretoken]");
+      return t ? t.value : "";
+    }
+    function snapshotAnswers() {
+      var answers = {};
+      var q, el, els;
+      for (q = 1; q <= 5; q++) {
+        el = form.querySelector('input[name="q' + q + '"]:checked');
+        if (el) answers[String(q)] = el.value;
+      }
+      for (q = 6; q <= 10; q++) {
+        els = form.querySelectorAll('input[name="q' + q + '"]:checked');
+        if (els.length) {
+          answers[String(q)] = Array.prototype.map.call(els, function (n) { return n.value; });
+        }
+      }
+      for (q = 11; q <= 20; q++) {
+        el = form.querySelector('[name="q' + q + '"]');
+        if (el && el.value && String(el.value).trim()) answers[String(q)] = String(el.value).trim();
+      }
+      return answers;
+    }
+    function displayName() {
+      var st = form.querySelector('[name="student_name"]');
+      return st ? String(st.value || "").trim() : "";
+    }
+    function sendProgress() {
+      var token = csrfToken();
+      if (!token) return;
+      fetch(saveUrl, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": token
+        },
+        body: JSON.stringify({
+          answers: snapshotAnswers(),
+          display_name: displayName(),
+          clipboard_used: copyDetected
+        })
+      }).catch(function () {});
+    }
+    function schedule() {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(sendProgress, 1800);
+    }
+    function flashCopyWarning() {
+      var el = document.getElementById("ur-copy-flash");
+      if (!el) return;
+      el.classList.remove("ur-copy-flash--on");
+      void el.offsetWidth;
+      el.classList.add("ur-copy-flash--on");
+      window.setTimeout(function () {
+        el.classList.remove("ur-copy-flash--on");
+      }, 2200);
+    }
+    function onClipboardUse() {
+      copyDetected = true;
+      flashCopyWarning();
+      schedule();
+    }
+    document.addEventListener("copy", onClipboardUse);
+    document.addEventListener("cut", onClipboardUse);
+    form.addEventListener("input", schedule);
+    form.addEventListener("change", schedule);
+    sendProgress();
+    setInterval(sendProgress, 7000);
+    window.addEventListener("pagehide", sendProgress);
+  })();
+  </script>
 </body>
 </html>
