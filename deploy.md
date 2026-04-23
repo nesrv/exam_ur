@@ -1,9 +1,10 @@
 # Деплой на VPS (без CI/CD)
 
-Домен: **https://programism.ru/**  
+Домен: **https://programism.ru/** (пример; в конфигах ниже — **exam_up.h1n.ru** — замените на свой `server_name` и имя в `ALLOWED_HOSTS` / certbot).
+
 Стек: Django 5.x, Gunicorn, Nginx, systemd. Ручное обновление кода (`git pull` или копирование архива).
 
-Структура репозитория: в корне лежит `manage.py`, каталог приложения Django — `myproject/` (там же `staticfiles/`, `media/`, `db.sqlite3` после миграций).
+Структура репозитория: в корне **`manage.py`**, пакет настроек Django — **`config/`** (файл `config/settings.py`), приложение **`quiz/`**. После миграций в корне появится **`db.sqlite3`**; после `collectstatic` — каталог **`staticfiles/`** (см. `STATIC_ROOT` в `settings.py`). Отдельного `MEDIA_ROOT` в проекте нет — блок `/media/` в Nginx опционален.
 
 ---
 
@@ -11,7 +12,7 @@
 
 - ОС: Ubuntu 22.04/24.04 LTS (или Debian).
 - Открыть в фаерволе: **22** (SSH), **80**, **443**.
-- DNS: запись **A** для `https://programism.ru/` → публичный IP VPS (при IPv6 — **AAAA**).
+- DNS: запись **A** для имени хоста (**например** `programism.ru` или `www.programism.ru`) → публичный IP VPS (при IPv6 — **AAAA**). В DNS указывают доменное имя без `https://`.
 
 ---
 
@@ -22,7 +23,6 @@
 ```bash
 apt update && apt install -y python3-venv python3-dev build-essential nginx git
 ```
-
 
 Код проекта — в **`/home/exam_up`** (корень репозитория с `manage.py`).
 
@@ -40,7 +40,7 @@ mkdir -p /home/exam_up
 
 ```bash
 cd /home/exam_up
-git clone https://github.com/AnastasiaAlekseeva204/exam_upsity_Life_Platphorm_diplom_project .
+git clone https://github.com/nesrv/exam_ur.git .
 ```
 
 Каталог `/home/exam_up` должен быть пустым (кроме скрытых служебных файлов), иначе клонируйте во временную папку и перенесите содержимое в `/home/exam_up`.
@@ -61,15 +61,18 @@ pip install -r requirements.txt gunicorn
 
 ## 5. Настройки Django для продакшена
 
-Перед публикацией в `myproject/myproject/settings.py` (или через переменные окружения / отдельный модуль настроек):
+В **`config/settings.py`** уже читаются переменные окружения (локально без них включён режим разработки). На VPS задайте их в unit-файле Gunicorn или в `/etc/environment`.
 
-| Параметр | Рекомендация |
-|----------|----------------|
-| `SECRET_KEY` | Новый случайный ключ, не хранить в открытом репозитории |
-| `DEBUG` | `False` |
-| `ALLOWED_HOSTS` | `'exam_up.h1n.ru'`, при необходимости IP сервера |
+| Переменная | Продакшен (пример) |
+|------------|-------------------|
+| `DJANGO_SECRET_KEY` | Случайная строка (`openssl rand -hex 32`) |
+| `DJANGO_DEBUG` | `false` |
+| `DJANGO_ALLOWED_HOSTS` | `programism.ru,www.programism.ru` (через запятую, без пробелов или с пробелами — обрежутся) |
+| `DJANGO_CSRF_TRUSTED_ORIGINS` | `https://programism.ru,https://www.programism.ru` (со схемой `https://`, иначе формы и админка за HTTPS выдадут ошибку CSRF) |
+| `DJANGO_SECURE_SSL_REDIRECT` | По умолчанию `true` при `DEBUG=false`; можно `false`, если редирект HTTP→HTTPS делает только Nginx |
+| `DJANGO_HSTS_SECONDS` | Опционально, например `31536000` (включит HSTS; включайте, когда уверены в HTTPS) |
 
-База по умолчанию — SQLite (`myproject/db.sqlite3`). Процесс Gunicorn должен иметь права на чтение/запись этого файла и каталога `myproject/`.
+База по умолчанию — SQLite (**`/home/exam_up/db.sqlite3`** — файл в корне проекта). Процесс Gunicorn должен иметь права на чтение/запись этого файла и каталога **`/home/exam_up`** (для журнала SQLite нужна запись в каталог, где лежит файл).
 
 Миграции и статика (из **корня** репозитория, где `manage.py`):
 
@@ -81,7 +84,7 @@ python manage.py collectstatic --noinput
 python manage.py createsuperuser   # по желанию
 ```
 
-Статика собирается в `myproject/staticfiles/`, медиа — `myproject/media/` (см. `STATIC_ROOT` / `MEDIA_ROOT` в `settings.py`).
+Статика собирается в **`/home/exam_up/staticfiles/`** (`STATIC_ROOT` в `config/settings.py`).
 
 ---
 
@@ -99,12 +102,16 @@ After=network.target
 [Service]
 User=root
 Group=root
-WorkingDirectory=/home/exam_up/myproject
+WorkingDirectory=/home/exam_up
 Environment="PATH=/home/exam_up/.venv/bin"
+Environment="DJANGO_SECRET_KEY=ЗАМЕНИТЕ_СЛУЧАЙНЫМ_КЛЮЧОМ"
+Environment="DJANGO_DEBUG=false"
+Environment="DJANGO_ALLOWED_HOSTS=exam_up.h1n.ru"
+Environment="DJANGO_CSRF_TRUSTED_ORIGINS=https://exam_up.h1n.ru"
 ExecStart=/home/exam_up/.venv/bin/gunicorn \
   --workers 1 \
   --bind 127.0.0.1:8001 \
-  myproject.wsgi:application
+  config.wsgi:application
 
 Restart=on-failure
 
@@ -112,7 +119,7 @@ Restart=on-failure
 WantedBy=multi-user.target
 ```
 
-`WorkingDirectory` — каталог `myproject/` в репозитории (тот же, что добавляется в `sys.path` из `manage.py`), чтобы модуль `myproject.wsgi` находился корректно.
+`WorkingDirectory` — **корень репозитория** (где лежит `manage.py`). WSGI-модуль этого проекта — **`config.wsgi:application`**.
 
 ```bash
 systemctl daemon-reload
@@ -139,12 +146,13 @@ server {
     location = /favicon.ico { access_log off; log_not_found off; }
 
     location /static/ {
-        alias /home/exam_up/myproject/staticfiles/;
+        alias /home/exam_up/staticfiles/;
     }
 
-    location /media/ {
-        alias /home/exam_up/myproject/media/;
-    }
+    # Раскомментируйте, если добавите MEDIA_ROOT в Django
+    # location /media/ {
+    #     alias /home/exam_up/media/;
+    # }
 
     location / {
         proxy_pass http://127.0.0.1:8001;
@@ -172,7 +180,7 @@ apt install -y certbot python3-certbot-nginx
 certbot --nginx -d exam_up.h1n.ru
 ```
 
-Certbot обновит конфиг Nginx на редирект и TLS.
+Certbot обновит конфиг Nginx на редирект и TLS. Домен в команде должен совпадать с `server_name` и с тем, что указан в `ALLOWED_HOSTS`.
 
 ---
 
@@ -194,8 +202,8 @@ systemctl restart gunicorn-exam_up
 
 ## 10. Быстрая проверка
 
-- `curl -I http://127.0.0.1` с сервера после настройки Nginx (или с хоста по домену).
-- Админка: `https://exam_up.h1n.ru/admin/`.
+- С сервера: `curl -I -H "Host: exam_up.h1n.ru" http://127.0.0.1/` (подставьте свой `server_name`), либо с рабочей станции: `curl -I https://ваш-домен/`.
+- Админка: `https://exam_up.h1n.ru/admin/` (замените домен на свой).
 - `python manage.py check --deploy` на сервере с продакшен-настройками.
 
 ---
