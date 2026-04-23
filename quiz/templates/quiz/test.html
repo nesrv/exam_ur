@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Зачёт — Управление разработкой</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --oz-blue: #005bff;
+      --oz-blue-hover: #0047cc;
+      --oz-blue-soft: #e8f1ff;
+      --oz-bg: #f2f5f9;
+      --oz-card: #fff;
+      --oz-line: #d6dbe3;
+      --oz-text: #001a34;
+      --oz-muted: #707f8d;
+      --radius: 16px;
+      --radius-sm: 12px;
+      --shadow: 0 4px 16px rgba(0, 26, 52, 0.06);
+      --shadow-hover: 0 8px 24px rgba(0, 91, 255, 0.12);
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      line-height: 1.5;
+      color: var(--oz-text);
+      font-size: 15px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--oz-bg);
+      background-image:
+        radial-gradient(ellipse 120% 80% at 100% -20%, rgba(0, 91, 255, 0.08), transparent),
+        radial-gradient(ellipse 80% 50% at -10% 50%, rgba(255, 108, 0, 0.05), transparent);
+    }
+
+    .ribbon {
+      background: linear-gradient(90deg, #001a34 0%, #0a2540 50%, #001a34 100%);
+      color: rgba(255, 255, 255, 0.88);
+      font-size: 12px;
+      padding: 0.45rem 1rem;
+      text-align: center;
+      letter-spacing: 0.02em;
+    }
+    .ribbon span { color: #7eb6ff; }
+
+    .shell {
+      max-width: 46rem;
+      margin: 0 auto;
+      padding: 1.25rem 1rem 3rem;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      text-decoration: none;
+      color: inherit;
+    }
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(145deg, var(--oz-blue) 0%, #003d99 100%);
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 4px 12px rgba(0, 91, 255, 0.35);
+    }
+    .brand-text { line-height: 1.2; }
+    .brand-text small {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--oz-muted);
+      margin-top: 2px;
+    }
+    .brand-text strong { font-size: 15px; font-weight: 700; }
+
+    .pill {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--oz-blue);
+      background: var(--oz-blue-soft);
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid rgba(0, 91, 255, 0.15);
+    }
+
+    .hero {
+      background: var(--oz-card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.35rem 1.5rem 1.5rem;
+      margin-bottom: 1.25rem;
+      border: 1px solid rgba(0, 26, 52, 0.06);
+    }
+    .hero h1 {
+      margin: 0 0 0.5rem;
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.25;
+    }
+    .hero-lead {
+      margin: 0 0 1.25rem;
+      color: var(--oz-muted);
+      font-size: 14px;
+    }
+    .steps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .steps span {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 0.35rem 0.6rem;
+      border-radius: 8px;
+      background: var(--oz-bg);
+      color: var(--oz-muted);
+      border: 1px solid var(--oz-line);
+    }
+    .steps span:nth-child(4) {
+      background: #fff8f0;
+      color: #c45a00;
+      border-color: #ffd4a8;
+    }
+
+    .field-meta label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--oz-muted);
+      margin-bottom: 0.35rem;
+    }
+    .field-meta input {
+      width: 100%;
+      max-width: 22rem;
+      padding: 0.65rem 0.85rem;
+      border: 1px solid var(--oz-line);
+      border-radius: var(--radius-sm);
+      font: inherit;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .field-meta input:focus {
+      outline: none;
+      border-color: var(--oz-blue);
+      box-shadow: 0 0 0 3px rgba(0, 91, 255, 0.2);
+    }
+
+    .card {
+      background: var(--oz-card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.25rem 1.35rem 1.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid rgba(0, 26, 52, 0.06);
+    }
+    .card-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.85rem;
+      border-bottom: 1px solid var(--oz-line);
+    }
+    .card-head h2 {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      line-height: 1.3;
+    }
+    .badge-part {
+      flex-shrink: 0;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #fff;
+      background: var(--oz-blue);
+      padding: 0.3rem 0.55rem;
+      border-radius: 6px;
+    }
+    .hint {
+      margin: 0 0 1rem;
+      font-size: 13px;
+      color: var(--oz-muted);
+    }
+    .answer-label {
+      margin: 0.5rem 0 0.35rem;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--oz-muted);
+    }
+
+    .q {
+      margin: 0 0 1rem;
+    }
+    .q:last-child { margin-bottom: 0; }
+    .q > p {
+      margin: 0 0 0.6rem;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--oz-text);
+    }
+
+    .q label {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      margin: 0 0 0.45rem;
+      padding: 0.65rem 0.75rem;
+      border: 1px solid var(--oz-line);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-weight: 450;
+      font-size: 14px;
+      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+    }
+    .q label:hover {
+      border-color: rgba(0, 91, 255, 0.45);
+      box-shadow: var(--shadow-hover);
+    }
+    .q label:has(input:checked) {
+      border-color: var(--oz-blue);
+      background: var(--oz-blue-soft);
+      box-shadow: inset 0 0 0 1px rgba(0, 91, 255, 0.12);
+    }
+    .q input[type="radio"],
+    .q input[type="checkbox"] {
+      margin-top: 3px;
+      accent-color: var(--oz-blue);
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    .q input[type="text"],
+    .q textarea {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      border: 1px solid var(--oz-line);
+      border-radius: var(--radius-sm);
+      font: inherit;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .q input[type="text"]:focus,
+    .q textarea:focus {
+      outline: none;
+      border-color: var(--oz-blue);
+      box-shadow: 0 0 0 3px rgba(0, 91, 255, 0.2);
+    }
+    .q textarea {
+      min-height: 5.5rem;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    .submit-wrap {
+      position: sticky;
+      bottom: 0;
+      margin: 1.5rem -1rem -3rem;
+      padding: 1rem 1rem 1.25rem;
+      background: linear-gradient(180deg, transparent 0%, var(--oz-bg) 35%);
+    }
+    .submit-inner {
+      max-width: 46rem;
+      margin: 0 auto;
+    }
+    button[type="submit"] {
+      width: 100%;
+      max-width: 46rem;
+      margin: 0;
+      padding: 0.9rem 1.25rem;
+      font: inherit;
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+      background: linear-gradient(180deg, var(--oz-blue) 0%, #0046c7 100%);
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(0, 91, 255, 0.35);
+      transition: transform 0.12s, box-shadow 0.12s, filter 0.12s;
+    }
+    button[type="submit"]:hover {
+      filter: brightness(1.05);
+      box-shadow: 0 8px 28px rgba(0, 91, 255, 0.45);
+    }
+    button[type="submit"]:active {
+      transform: translateY(1px);
+    }
+    .submit-note {
+      text-align: center;
+      font-size: 12px;
+      color: var(--oz-muted);
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="ribbon">Доставка знаний в срок · <span>части 1–3 — автопроверка</span> · часть 4 — преподаватель</div>
+
+  <div class="shell">
+    <div class="topbar">
+      <a class="brand" href="{% url 'quiz_test' %}">
+        <span class="brand-mark">УР</span>
+        <span class="brand-text">
+          <strong>Кабинет зачёта</strong>
+          <small>Управление разработкой</small>
+        </span>
+      </a>
+      <span class="pill">20 вопросов · ~25 мин</span>
+    </div>
+
+    <form method="post" action="">
+      {% csrf_token %}
+
+      <header class="hero">
+        <h1>Электронное тестирование</h1>
+        <p class="hero-lead">Зачёт по дисциплине «Управление разработкой». Ответьте на все блоки и нажмите «Отправить» — баллы за части 1–3 появятся сразу.</p>
+        <div class="steps" aria-hidden="true">
+          <span>1 · Одиночный выбор</span>
+          <span>2 · Множественный выбор</span>
+          <span>3 · Ввод ответа</span>
+          <span>4 · Ввод кейса</span>
+        </div>
+        <hr style="margin:1.25rem 0 1rem;border:none;border-top:1px solid var(--oz-line)">
+        <div class="field-meta">
+          <label for="id_student">ФИО / группа</label>
+          <input id="id_student" type="text" name="student_name" maxlength="200" autocomplete="name">
+        </div>
+      </header>
+
+      <section class="card" aria-labelledby="p1">
+        <div class="card-head">
+          <h2 id="p1">Часть 1. Одиночный выбор (5 вопросов)</h2>
+          <span class="badge-part">5</span>
+        </div>
+        <p class="hint"><em>Выберите один правильный вариант ответа.</em></p>
+
+        <div class="q">
+          <p>1. Как называется методология, где требования оцениваются итеративно, а команда работает спринтами?</p>
+          <label><input type="radio" name="q1" value="A" required> A) Waterfall</label>
+          <label><input type="radio" name="q1" value="B"> B) V-Model</label>
+          <label><input type="radio" name="q1" value="C"> C) Scrum</label>
+          <label><input type="radio" name="q1" value="D"> D) Kanban</label>
+        </div>
+        <div class="q">
+          <p>2. Что из перечисленного относится к вертикальному масштабированию?</p>
+          <label><input type="radio" name="q2" value="A" required> A) Добавление нового сервера в кластер</label>
+          <label><input type="radio" name="q2" value="B"> B) Увеличение оперативной памяти на существующем сервере</label>
+          <label><input type="radio" name="q2" value="C"> C) Разделение базы данных на шарды</label>
+          <label><input type="radio" name="q2" value="D"> D) Запуск дополнительных контейнеров в оркестраторе</label>
+        </div>
+        <div class="q">
+          <p>3. Какой вид тестирования проверяет, что новый код не сломал уже работающую функциональность?</p>
+          <label><input type="radio" name="q3" value="A" required> A) Юнит-тестирование</label>
+          <label><input type="radio" name="q3" value="B"> B) Регрессионное тестирование</label>
+          <label><input type="radio" name="q3" value="C"> C) Нагрузочное тестирование</label>
+          <label><input type="radio" name="q3" value="D"> D) Функциональное тестирование</label>
+        </div>
+        <div class="q">
+          <p>4. Кто в Scrum-команде отвечает за приоритизацию бэклога продукта?</p>
+          <label><input type="radio" name="q4" value="A" required> A) Scrum-мастер</label>
+          <label><input type="radio" name="q4" value="B"> B) Команда разработки</label>
+          <label><input type="radio" name="q4" value="C"> C) Product Owner</label>
+          <label><input type="radio" name="q4" value="D"> D) Менеджер проекта</label>
+        </div>
+        <div class="q">
+          <p>5. Какой инструмент НЕ относится к системам управления проектами (в классическом понимании Kanban/Scrum)?</p>
+          <label><input type="radio" name="q5" value="A" required> A) Jira</label>
+          <label><input type="radio" name="q5" value="B"> B) Trello</label>
+          <label><input type="radio" name="q5" value="C"> C) Git</label>
+          <label><input type="radio" name="q5" value="D"> D) YouTrack</label>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="p2">
+        <div class="card-head">
+          <h2 id="p2">Часть 2. Множественный выбор (5 вопросов)</h2>
+          <span class="badge-part">5</span>
+        </div>
+        <p class="hint"><em>Выберите <strong>все</strong> правильные варианты ответов (от 2 до 4).</em></p>
+
+        <div class="q">
+          <p>6. Какие из перечисленных методологий относятся к гибким (Agile)?</p>
+          <label><input type="checkbox" name="q6" value="A"> A) Waterfall</label>
+          <label><input type="checkbox" name="q6" value="B"> B) Scrum</label>
+          <label><input type="checkbox" name="q6" value="C"> C) V-Model</label>
+          <label><input type="checkbox" name="q6" value="D"> D) Kanban</label>
+        </div>
+        <div class="q">
+          <p>7. Какие характеристики присущи высоконагруженной системе (highload)?</p>
+          <label><input type="checkbox" name="q7" value="A"> A) Способность обрабатывать тысячи запросов в секунду</label>
+          <label><input type="checkbox" name="q7" value="B"> B) Обязательное использование одного мощного сервера</label>
+          <label><input type="checkbox" name="q7" value="C"> C) Горизонтальное масштабирование</label>
+          <label><input type="checkbox" name="q7" value="D"> D) Отказоустойчивость (redundancy)</label>
+        </div>
+        <div class="q">
+          <p>8. Какие виды тестирования относятся к функциональным?</p>
+          <label><input type="checkbox" name="q8" value="A"> A) Тестирование производительности</label>
+          <label><input type="checkbox" name="q8" value="B"> B) Smoke-тестирование (проверка критических путей)</label>
+          <label><input type="checkbox" name="q8" value="C"> C) Тестирование безопасности (пентест)</label>
+          <label><input type="checkbox" name="q8" value="D"> D) Sanity-тестирование (проверка работоспособности после изменений)</label>
+        </div>
+        <div class="q">
+          <p>9. Какие метрики качества ПО вы знаете?</p>
+          <label><input type="checkbox" name="q9" value="A"> A) Покрытие кода тестами (code coverage)</label>
+          <label><input type="checkbox" name="q9" value="B"> B) Количество строк кода в проекте</label>
+          <label><input type="checkbox" name="q9" value="C"> C) Индекс цикломатической сложности</label>
+          <label><input type="checkbox" name="q9" value="D"> D) Среднее время восстановления после сбоя (MTTR)</label>
+        </div>
+        <div class="q">
+          <p>10. Какие задачи решает DevOps?</p>
+          <label><input type="checkbox" name="q10" value="A"> A) Объединение разработки и эксплуатации</label>
+          <label><input type="checkbox" name="q10" value="B"> B) Автоматизация CI/CD (непрерывная интеграция и доставка)</label>
+          <label><input type="checkbox" name="q10" value="C"> C) Ручное тестирование всех релизов</label>
+          <label><input type="checkbox" name="q10" value="D"> D) Инфраструктура как код (IaC)</label>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="p3">
+        <div class="card-head">
+          <h2 id="p3">Часть 3. Ввод ответа (5 вопросов)</h2>
+          <span class="badge-part">5</span>
+        </div>
+        <p class="hint"><em>Напишите краткий ответ (одно слово, термин или короткая фраза).</em></p>
+
+        <div class="q">
+          <p>11. Как называется процесс автоматического управления контейнерами (например, с помощью Kubernetes), который включает запуск, остановку и масштабирование?</p>
+          <p class="answer-label">Ваш ответ:</p>
+          <input type="text" name="q11" maxlength="500" autocomplete="off">
+        </div>
+        <div class="q">
+          <p>12. Как называется методология, которая основана на визуализации задач на доске с ограничением количества задач в столбцах (WIP limit)?</p>
+          <p class="answer-label">Ваш ответ:</p>
+          <input type="text" name="q12" maxlength="500" autocomplete="off">
+        </div>
+        <div class="q">
+          <p>13. Как называется подход, при котором код и конфигурация инфраструктуры хранятся в одной системе контроля версий, а изменения разворачиваются автоматически (часто вместе с Kubernetes)?</p>
+          <p class="answer-label">Ваш ответ:</p>
+          <input type="text" name="q13" maxlength="500" autocomplete="off">
+        </div>
+        <div class="q">
+          <p>14. Как называется тестирование самого маленького изолированного фрагмента кода (обычно функции или метода)?</p>
+          <p class="answer-label">Ваш ответ:</p>
+          <input type="text" name="q14" maxlength="500" autocomplete="off">
+        </div>
+        <div class="q">
+          <p>15. Какая модель разработки предполагает строгую последовательность фаз: требования → дизайн → реализация → верификация → эксплуатация, без возврата на предыдущие этапы?</p>
+          <p class="answer-label">Ваш ответ:</p>
+          <input type="text" name="q15" maxlength="500" autocomplete="off">
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="p4">
+        <div class="card-head">
+          <h2 id="p4">Часть 4. Ввод кейса (5 вопросов)</h2>
+          <span class="badge-part" style="background:linear-gradient(135deg,#ff6c00,#e85d00)">5</span>
+        </div>
+        <p class="hint"><em>Опишите решение или подход (2–5 предложений). Оценивается понимание, а не единственно верный ответ.</em></p>
+
+        <div class="q">
+          <p><strong>16. Кейс (риски).</strong> Ваша команда разрабатывает платёжный сервис. За день до релиза вы находите критический баг в модуле списания денег. По Waterfall релиз отложили бы на месяц. Как вы поступите в Agile-команде, чтобы минимизировать ущерб?</p>
+          <p class="answer-label">Ваш ответ:</p>
+          <textarea name="q16"></textarea>
+        </div>
+        <div class="q">
+          <p><strong>17. Кейс (масштабирование).</strong> В пик нагрузки ваш сервис начинает тормозить. Выясняется, что процессор на единственном сервере загружен на 100%. Опишите два шага: один для быстрого временного решения и второй — для долгосрочного архитектурного.</p>
+          <p class="answer-label">Ваш ответ:</p>
+          <textarea name="q17"></textarea>
+        </div>
+        <div class="q">
+          <p><strong>18. Кейс (тестирование).</strong> Разработчик исправил мелкий баг в кнопке «Вход» и говорит: «Всё ок, тесты не нужны». Какие три аргумента вы приведёте, чтобы убедить его запустить хотя бы минимальный набор тестов?</p>
+          <p class="answer-label">Ваш ответ:</p>
+          <textarea name="q18"></textarea>
+        </div>
+        <div class="q">
+          <p><strong>19. Кейс (управление рисками).</strong> Вы PM проекта. Ключевой разработчик предупредил, что уходит через 2 недели. Какие три действия вы предпримете немедленно?</p>
+          <p class="answer-label">Ваш ответ:</p>
+          <textarea name="q19"></textarea>
+        </div>
+        <div class="q">
+          <p><strong>20. Кейс (архитектура).</strong> Вам нужно спроектировать систему для онлайн-голосования, которая выдержит 1 млн участников в час. Назовите два ключевых архитектурных решения (например, про БД или балансировку) и объясните, почему именно они.</p>
+          <p class="answer-label">Ваш ответ:</p>
+          <textarea name="q20"></textarea>
+        </div>
+      </section>
+
+      <div class="submit-wrap">
+        <div class="submit-inner">
+          <button type="submit">Отправить ответы</button>
+          <p class="submit-note">Нажимая кнопку, вы соглашаетесь с тем, что ответы сохраняются для проверки.</p>
+        </div>
+      </div>
+    </form>
+  </div>
+</body>
+</html>
