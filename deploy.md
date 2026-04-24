@@ -1,10 +1,6 @@
 # Деплой на VPS (без CI/CD)
 
-<<<<<<< HEAD
-Сайт: **https://programism.ru/** — этот же домен используется во всех примерах ниже (Nginx, certbot, переменные Django).
-=======
-Домен: **https://programism.ru/** (пример; в конфигах ниже — **exam_up.h1n.ru** — замените на свой `server_name` и имя в `ALLOWED_HOSTS` / certbot).
->>>>>>> c982eb66f4ece7e0bfd949ae9f2eb571af243d14
+Сайт: **https://programism.ru/** — этот же домен используется во всех примерах ниже (Nginx, certbot, переменные Django). При другом домене замените `server_name`, `ALLOWED_HOSTS`, certbot `-d` и примеры `curl` на свой хост.
 
 Стек: Django 5.x, Gunicorn, Nginx, systemd. Ручное обновление кода (`git pull` или копирование архива).
 
@@ -16,11 +12,7 @@
 
 - ОС: Ubuntu 22.04/24.04 LTS (или Debian).
 - Открыть в фаерволе: **22** (SSH), **80**, **443**.
-<<<<<<< HEAD
-- DNS: записи **A** (и при необходимости **AAAA**) для **`programism.ru`** и при использовании поддомена в браузере — для **`www.programism.ru`** → публичный IP VPS. В панели DNS указывают имя хоста без префикса `https://`.
-=======
-- DNS: запись **A** для имени хоста (**например** `programism.ru` или `www.programism.ru`) → публичный IP VPS (при IPv6 — **AAAA**). В DNS указывают доменное имя без `https://`.
->>>>>>> c982eb66f4ece7e0bfd949ae9f2eb571af243d14
+- DNS: записи **A** (и при необходимости **AAAA**) для **`programism.ru`** и при использовании **www** — для **`www.programism.ru`** → публичный IP VPS. В панели DNS указывают имя хоста без префикса `https://`.
 
 ---
 
@@ -114,19 +106,11 @@ WorkingDirectory=/home/exam_up
 Environment="PATH=/home/exam_up/.venv/bin"
 Environment="DJANGO_SECRET_KEY=ЗАМЕНИТЕ_СЛУЧАЙНЫМ_КЛЮЧОМ"
 Environment="DJANGO_DEBUG=false"
-<<<<<<< HEAD
 Environment="DJANGO_ALLOWED_HOSTS=programism.ru,www.programism.ru"
 Environment="DJANGO_CSRF_TRUSTED_ORIGINS=https://programism.ru,https://www.programism.ru"
 ExecStart=/home/exam_up/.venv/bin/gunicorn \
   --workers 1 \
   --bind 127.0.0.1:8010 \
-=======
-Environment="DJANGO_ALLOWED_HOSTS=exam_up.h1n.ru"
-Environment="DJANGO_CSRF_TRUSTED_ORIGINS=https://exam_up.h1n.ru"
-ExecStart=/home/exam_up/.venv/bin/gunicorn \
-  --workers 1 \
-  --bind 127.0.0.1:8001 \
->>>>>>> c982eb66f4ece7e0bfd949ae9f2eb571af243d14
   config.wsgi:application
 
 Restart=on-failure
@@ -196,11 +180,7 @@ apt install -y certbot python3-certbot-nginx
 certbot --nginx -d programism.ru -d www.programism.ru
 ```
 
-<<<<<<< HEAD
-Certbot обновит конфиг Nginx на редирект и TLS. Имена в `-d` должны совпадать с `server_name` и с хостами в `DJANGO_ALLOWED_HOSTS`.
-=======
-Certbot обновит конфиг Nginx на редирект и TLS. Домен в команде должен совпадать с `server_name` и с тем, что указан в `ALLOWED_HOSTS`.
->>>>>>> c982eb66f4ece7e0bfd949ae9f2eb571af243d14
+Certbot обновит конфиг Nginx на редирект и TLS. Имена в `-d` должны совпадать с `server_name` и с хостами в `DJANGO_ALLOWED_HOSTS` / `ALLOWED_HOSTS`.
 
 ---
 
@@ -222,14 +202,9 @@ systemctl restart gunicorn-exam_up
 
 ## 10. Быстрая проверка
 
-<<<<<<< HEAD
-- С сервера (проверка виртуального хоста): `curl -I -H "Host: programism.ru" http://127.0.0.1/`
+- С сервера (проверка виртуального хоста): `curl -I -H "Host: programism.ru" http://127.0.0.1/` (подставьте свой `server_name`, если домен другой).
 - Снаружи: `curl -I https://programism.ru/` и при необходимости `curl -I https://www.programism.ru/`
 - Админка: **https://programism.ru/admin/**
-=======
-- С сервера: `curl -I -H "Host: exam_up.h1n.ru" http://127.0.0.1/` (подставьте свой `server_name`), либо с рабочей станции: `curl -I https://ваш-домен/`.
-- Админка: `https://exam_up.h1n.ru/admin/` (замените домен на свой).
->>>>>>> c982eb66f4ece7e0bfd949ae9f2eb571af243d14
 - `python manage.py check --deploy` на сервере с продакшен-настройками.
 
 ---
