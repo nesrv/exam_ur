@@ -512,7 +512,7 @@
     if (!form) return;
     var saveUrl = "{% url 'quiz_save_progress' %}";
     var timer = null;
-    var copyDetected = false;
+    var copyCount = 0;
     function csrfToken() {
       var t = form.querySelector("[name=csrfmiddlewaretoken]");
       return t ? t.value : "";
@@ -553,7 +553,7 @@
         body: JSON.stringify({
           answers: snapshotAnswers(),
           display_name: displayName(),
-          clipboard_used: copyDetected
+          clipboard_count: copyCount
         })
       }).catch(function () {});
     }
@@ -572,7 +572,7 @@
       }, 2200);
     }
     function onClipboardUse() {
-      copyDetected = true;
+      copyCount += 1;
       flashCopyWarning();
       schedule();
     }

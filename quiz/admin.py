@@ -9,8 +9,14 @@ from .variants import VARIANTS
 
 @admin.register(QuizProgress)
 class QuizProgressAdmin(admin.ModelAdmin):
-    list_display = ("display_name", "clipboard_used", "session_key", "updated_at")
-    readonly_fields = ("session_key", "display_name", "answers", "clipboard_used", "updated_at")
+    list_display = ("display_name", "clipboard_count", "session_key", "updated_at")
+    readonly_fields = (
+        "session_key",
+        "display_name",
+        "answers",
+        "clipboard_count",
+        "updated_at",
+    )
     search_fields = ("display_name", "session_key")
 
 
@@ -20,7 +26,7 @@ class SubmissionAdmin(admin.ModelAdmin):
         "student_name",
         "variant_display",
         "score_auto_total",
-        "clipboard_used",
+        "clipboard_count",
         "score_part4",
         "created_at",
     )
@@ -31,7 +37,7 @@ class SubmissionAdmin(admin.ModelAdmin):
         "variant_display",
         "part4_display",
         "answers",
-        "clipboard_used",
+        "clipboard_count",
         "score_part1",
         "score_part2",
         "score_part3",

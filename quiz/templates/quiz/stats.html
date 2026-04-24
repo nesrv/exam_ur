@@ -224,12 +224,14 @@
           ? "<strong>" + escapeHtml(sub) + "</strong>"
           : "<strong class=\"muted\">—</strong>";
         var live = s.live ? "<span class=\"badge-live\" title=\"Ответы ещё не отправлены\">онлайн</span>" : "";
-        var copyMark = s.copied
-          ? "<span class=\"copy-emoji\" title=\"Зафиксировано копирование с экрана теста\" aria-label=\"Копирование\">📋</span>"
+        var cc = typeof s.clipboard_count === "number" && !isNaN(s.clipboard_count) ? s.clipboard_count : 0;
+        var copyMark = cc > 0
+          ? "<span class=\"copy-emoji\" title=\"Копирований с экрана теста: " + cc + "\" aria-label=\"Копирований: " + cc + "\">📋</span>"
           : "";
         row.innerHTML =
           "<div class=\"row-head\">" + title + copyMark + live + "</div>" +
-          "<div class=\"bar-meta\">Ответов заполнено: <b>" + s.filled + "</b> из " + s.total + "</div>" +
+          "<div class=\"bar-meta\">Ответов заполнено: <b>" + s.filled + "</b> из " + s.total +
+          " · Копирований: <b>" + cc + "</b></div>" +
           "<div class=\"bar-wrap\" role=\"progressbar\" aria-valuemin=\"0\" aria-valuemax=\"" + s.total +
           "\" aria-valuenow=\"" + s.filled + "\" aria-label=\"Заполнено ответов\">" +
           "<div class=\"bar-fill\" style=\"width:" + pct + "%\"></div></div>" +

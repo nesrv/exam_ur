@@ -20,7 +20,9 @@ class QuizProgress(models.Model):
     session_key = models.CharField(max_length=40, unique=True, db_index=True)
     display_name = models.CharField(max_length=200, blank=True)
     answers = models.JSONField(default=dict)
-    clipboard_used = models.BooleanField("Было копирование на экране теста", default=False)
+    clipboard_count = models.PositiveIntegerField(
+        "Число копирований на экране теста", default=0
+    )
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -38,7 +40,9 @@ class Submission(models.Model):
     )
     student_name = models.CharField("ФИО / группа", max_length=200, blank=True)
     answers = models.JSONField("Ответы (JSON)", default=dict)
-    clipboard_used = models.BooleanField("Копирование на экране теста", default=False)
+    clipboard_count = models.PositiveIntegerField(
+        "Число копирований на экране теста", default=0
+    )
 
     score_part1 = models.PositiveSmallIntegerField(default=0)
     score_part2 = models.PositiveSmallIntegerField(default=0)

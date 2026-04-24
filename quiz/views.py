@@ -89,16 +89,16 @@ def test_view(request: HttpRequest) -> HttpResponse:
             return redirect("quiz_landing")
         answers = _collect_answers(request.POST)
         g = grade_auto(answers, vid)
-        copied = False
+        n_clip = 0
         if sk:
-            qp = QuizProgress.objects.filter(session_key=sk).only("clipboard_used").first()
+            qp = QuizProgress.objects.filter(session_key=sk).only("clipboard_count").first()
             if qp:
-                copied = qp.clipboard_used
+                n_clip = int(qp.clipboard_count)
         sub = Submission.objects.create(
             variant=vid,
             student_name=request.POST.get("student_name", "").strip(),
             answers=answers,
-            clipboard_used=copied,
+            clipboard_count=n_clip,
             score_part1=g["score_part1"],
             score_part2=g["score_part2"],
             score_part3=g["score_part3"],
@@ -300,7 +300,8 @@ def _stats_payload() -> dict:
                     "result": "в процессе",
                     "grade": "—",
                     "live": True,
-                    "copied": bool(d.clipboard_used),
+                    "clipboard_count": int(d.clipboard_count),
+                    "copied": int(d.clipboard_count) > 0,
                     "mark_five": "—",
                     "scale_pct": None,
                 }
@@ -322,7 +323,8 @@ def _stats_payload() -> dict:
                         else "—"
                     ),
                     "live": False,
-                    "copied": bool(sub.clipboard_used),
+                    "clipboard_count": int(sub.clipboard_count),
+                    "copied": int(sub.clipboard_count) > 0,
                     "mark_five": _mark_five_from_percent(pct),
                     "scale_pct": round(pct),
                 }
@@ -336,6 +338,7 @@ def _stats_payload() -> dict:
                     "result": "—",
                     "grade": "—",
                     "live": False,
+                    "clipboard_count": 0,
                     "copied": False,
                     "mark_five": "—",
                     "scale_pct": None,
@@ -361,16 +364,25 @@ def save_progress_view(request: HttpRequest) -> JsonResponse:
     answers = _normalize_draft_answers(body.get("answers"))
     pending = (request.session.get(SESSION_PENDING_STUDENT) or "").strip()
     dn = (body.get("display_name") or pending or "").strip()[:200]
-    clip_req = bool(body.get("clipboard_used"))
+    def _coerce_clipboard_count(raw) -> int:
+        try:
+            n = int(raw)
+        except (TypeError, ValueError):
+            n = 0
+        return max(0, min(n, 9999))
+
+    incoming_clip = _coerce_clipboard_count(body.get("clipboard_count"))
     sk = _session_key_for_storage(request)
     if not sk:
         return JsonResponse({"ok": False, "error": "session"}, status=500)
     prev_clip = (
         QuizProgress.objects.filter(session_key=sk)
-        .values_list("clipboard_used", flat=True)
+        .values_list("clipboard_count", flat=True)
         .first()
     )
-    clip_final = clip_req or (prev_clip is True)
+    if prev_clip is None:
+        prev_clip = 0
+    clip_final = max(int(prev_clip), incoming_clip)
     for attempt in range(4):
         try:
             QuizProgress.objects.update_or_create(
@@ -378,7 +390,7 @@ def save_progress_view(request: HttpRequest) -> JsonResponse:
                 defaults={
                     "display_name": dn,
                     "answers": answers,
-                    "clipboard_used": clip_final,
+                    "clipboard_count": clip_final,
                 },
             )
             break
